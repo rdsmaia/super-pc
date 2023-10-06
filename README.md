@@ -4,7 +4,7 @@ Neste repositório temos um simples conjunto de scripts para permitir o treiname
 
 ## Processo
 1. ```ssh super-pc```
-2. ```git clone```
+2. ```git clone https://github.com/rdsmaia/super-pc.git```
 3. ```cd super-pc```
 4. ```sbatch run_mnist_test.sh```
 5. ```squeue -lu $USER```
