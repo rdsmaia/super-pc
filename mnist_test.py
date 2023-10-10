@@ -1,12 +1,19 @@
 import torch
 import torch.nn as nn
+from torch import optim
+from torch.utils.data import DataLoader
 from torchvision import datasets
 from torchvision.transforms import ToTensor
-from torch import optim
 from torch.autograd import Variable
 
+hp = {
+    'epochs': 10,
+    'LR': 0.01,
+    'batch_size': 128,
+    'validation_steps': 100,
+}
 
-def train(num_epochs, cnn, loaders):
+def train(num_epochs, cnn, loaders, validation_steps):
     
     cnn.train()
         
@@ -30,7 +37,7 @@ def train(num_epochs, cnn, loaders):
             # apply gradients             
             optimizer.step()                
             
-            if (i+1) % 100 == 0:
+            if (i+1) % hp.validation_steps == 0:
                 print ('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}' 
                        .format(epoch + 1, num_epochs, i + 1, total_step, loss.item()))
             pass
@@ -38,7 +45,7 @@ def train(num_epochs, cnn, loaders):
     pass
 
 class CNN(nn.Module):
-    def __init__(self):
+    def __init__(self, hp):
         super(CNN, self).__init__()
         self.conv1 = nn.Sequential(         
             nn.Conv2d(
@@ -67,49 +74,54 @@ class CNN(nn.Module):
         return output, x    # return x for visualization
 
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-print(f'Current device being used: {device}\n')
+if __name__ == "__main__":
 
-train_data = datasets.MNIST(
-    root = 'data',
-    train = True,                         
-    transform = ToTensor(), 
-    download = True,            
-)
-test_data = datasets.MNIST(
-    root = 'data', 
-    train = False, 
-    transform = ToTensor()
-)
+    # check GPU usage.
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print(f'Current device being used: {device}\n')
 
-print(f'Training data: {train_data}\n')
-print(train_data.data.size())
-
-print(f'Test data: {test_data}\n')
-print(train_data.targets.size())
-
-from torch.utils.data import DataLoader
-loaders = {
-    'train' : torch.utils.data.DataLoader(train_data, 
-                                          batch_size=100, 
-                                          shuffle=True, 
-                                          num_workers=1),
+    # load datasets
+    train_data = datasets.MNIST(
+        root = 'data',
+        train = True,
+        transform = ToTensor(),
+        download = True,
+    )
+    test_data = datasets.MNIST(
+        root = 'data',
+        train = False,
+        transform = ToTensor()
+    )
+    print(f'Training data: {train_data}\n')
+    print(f'Test data: {test_data}\n')
     
-    'test'  : torch.utils.data.DataLoader(test_data, 
-                                          batch_size=100, 
-                                          shuffle=True, 
-                                          num_workers=1),
-}
-print(f'Loaders: {loaders}\n')
+    # data loaders
+    loaders = {
+        'train' : DataLoader(train_data,
+                        batch_size=hp['batch_size'],
+                        shuffle=True,
+                        num_workers=1),
+        'test'  : DataLoader(test_data,
+                        batch_size=hp['batch_size'],
+                        shuffle=True,
+                        num_workers=1),
+    }
+    print(f'Data loaders: {loaders}\n')
 
-cnn = CNN()
-print(f'Model: {cnn}\n')
+    # build model
+    cnn = CNN(hp)
+    print(f'Model:\n {cnn}\n')
 
-loss_func = nn.CrossEntropyLoss()
-print(f'Loss function: {loss_func}\n')
+    # loss
+    loss_func = nn.CrossEntropyLoss()
+    print(f'Loss function: {loss_func}\n')
 
-optimizer = optim.Adam(cnn.parameters(), lr = 0.01)   
-print(f'Optimizer: {optimizer}\n')
+    # optimizer
+    optimizer = optim.Adam(cnn.parameters(), lr = hp['LR'])
+    print(f'Optimizer: {optimizer}\n')
 
-num_epochs = 10
-train(num_epochs, cnn, loaders)
+    num_epochs = hp['epochs']
+
+    # train model
+    train(num_epochs, cnn, loaders, hp['validation_steps'])
+

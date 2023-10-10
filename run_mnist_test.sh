@@ -1,6 +1,6 @@
 #!/bin/bash 
 #SBATCH --job-name=gpu_check
-#SBATCH --time=0-0:10
+#SBATCH --time=0-0:20
 #SBATCH --partition=gpu
 #SBATCH --exclusive
 
